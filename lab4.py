@@ -381,7 +381,7 @@ def check_and_clean_symbol_tables(global_table):
     # 从全局符号表中删除这些变量
     for name in to_delete:
         del global_table.entries[name]
-        print(f"Warning: Removed '{name}' from global symbol table as it appears in local scope")
+        # print(f"Warning: Removed '{name}' from global symbol table as it appears in local scope")
 # ====================
 # 主程序部分
 # ====================
