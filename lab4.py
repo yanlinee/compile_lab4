@@ -12,7 +12,9 @@ tokens = (
     'LPAREN', 'RPAREN',  # 括号
     'LBRACK', 'RBRACK',  # 方括号
     'LBRACE', 'RBRACE',  # 大括号
-    'SEMI', 'COMMA'  # 分隔符
+    'SEMI', 'COMMA',  # 分隔符
+    'ASSIGN',  # 赋值
+    'RETURN'  # 返回语句
 )
 
 # 简单的令牌规则
@@ -24,11 +26,13 @@ t_LBRACE = r'\{'
 t_RBRACE = r'\}'
 t_SEMI = r';'
 t_COMMA = r','
+t_ASSIGN = r'='
 
 # 保留字映射
 reserved = {
     'int': 'INT',
     'void': 'VOID',
+    'return': 'RETURN'
 }
 
 # 忽略的字符
@@ -53,7 +57,7 @@ def t_NUM(t):
 
 
 def t_error(t):
-    print(f"词法错误: 非法字符 {t.value[0]}")
+    print(f"Lexical error: Illegal character {t.value[0]} at line {t.lineno}")
     t.lexer.skip(1)
 
 
@@ -93,9 +97,9 @@ class SymbolTableEntry:
 
     def __repr__(self):
         type_str = self.kind if self.kind == 'FUNC' else self.type
-        info = [f"{self.name}", f"{type_str}", f"{self.offset}"]
+        info = [f"name: {self.name}", f"type: {type_str}", f"offset: {self.offset}"]
         if self.kind == 'ARRAY':
-            info.append(f"dims={self.dims}")
+            info.append(f"dims: {self.dims}")
         return " ".join(info)
 
 
@@ -110,17 +114,14 @@ class SymbolTable:
 
     def add(self, name, kind, type=None, dims=None):
         """添加符号到符号表"""
-        # 检查重复定义
         if name in self.entries:
-            print(f"警告: 重复定义 {name}")
+            print(f"Warning: Symbol {name} already defined")
             return None
 
-        # 创建新条目
         entry = SymbolTableEntry(name, kind)
         entry.type = type
         entry.offset = self.header.width
 
-        # 处理数组
         if kind == 'ARRAY':
             if dims:
                 entry.dims = dims
@@ -128,9 +129,8 @@ class SymbolTable:
             else:
                 entry.size = 4
 
-        # 添加到符号表
         self.entries[name] = entry
-        if kind != 'FUNC':  # 函数不计入大小
+        if kind != 'FUNC':
             self.header.width += entry.size
 
         return entry
@@ -143,29 +143,31 @@ class SymbolTable:
             return self.header.outer.lookup(name)
         return None
 
+    def __repr__(self):
+        result = [str(self.header)]
+        for entry in self.entries.values():
+            result.append(str(entry))
+        return "\n".join(result)
+
 
 # ====================
 # 语法分析器部分
 # ====================
 
-start = 'program'
-global_table = SymbolTable()
-
-
 def p_program(p):
     '''program : decl_list'''
-    # 输出所有符号表
-    print("\n全局符号表:")
+    p[0] = p[1]
+    print("\nGlobal Symbol Table:")
     print(global_table)
     for entry in global_table.entries.values():
         if entry.kind == 'FUNC' and entry.symtab:
-            print(f"\n函数 {entry.name} 的符号表:")
+            print(f"\nSymbol Table for function {entry.name}:")
             print(entry.symtab)
 
 
 def p_decl_list(p):
     '''decl_list : decl_list decl
-                 | decl'''
+                | decl'''
     if len(p) == 2:
         p[0] = [p[1]]
     else:
@@ -178,20 +180,40 @@ def p_decl(p):
     p[0] = p[1]
 
 
-def p_var_decl(p):
-    '''var_decl : type_spec ID SEMI
-                | type_spec ID LBRACK NUM RBRACK SEMI'''
-    name = p[2]
-    type = p[1]
-    current_table = p.parser.current_table
+def p_type_spec(p):
+    '''type_spec : INT
+                | VOID'''
+    p[0] = p[1]
 
-    # 变量声明处理
-    if len(p) == 4:  # 普通变量
-        entry = current_table.add(name, 'VAR', type)
-    else:  # 数组变量
-        dims = [p[4]]
-        entry = current_table.add(name, 'ARRAY', type, dims=dims)
-    p[0] = entry
+
+def p_params(p):
+    '''params : param_list
+             | VOID
+             | '''
+    if len(p) == 2 and p[1] != 'void':
+        p[0] = p[1]
+    else:
+        p[0] = []
+
+
+def p_param_list(p):
+    '''param_list : param_list COMMA param
+                 | param'''
+    if len(p) == 2:
+        p[0] = [p[1]]
+    else:
+        p[0] = p[1] + [p[3]]
+
+
+def p_param(p):
+    '''param : type_spec ID
+            | type_spec ID LBRACK RBRACK'''
+    param = {'name': p[2], 'type': p[1]}
+    if len(p) == 3:
+        param['kind'] = 'VAR'
+    else:
+        param['kind'] = 'ARRAY'
+    p[0] = param
 
 
 def p_func_decl(p):
@@ -200,16 +222,23 @@ def p_func_decl(p):
     rtype = p[1]
     params = p[4]
 
-    # 创建函数符号表
+    # 创建函数的符号表
     func_table = SymbolTable(outer=global_table, name=name)
     func_table.header.rtype = rtype
     func_table.header.argc = len(params)
 
-    # 保存并切换当前符号表
+    # 将函数添加到全局符号表
+    func_entry = global_table.add(name, 'FUNC')
+    if func_entry:
+        func_entry.type = rtype
+        func_entry.params = params
+        func_entry.symtab = func_table
+
+    # 保存当前符号表并切换到函数的符号表
     old_table = p.parser.current_table
     p.parser.current_table = func_table
 
-    # 处理参数
+    # 添加参数到函数的符号表
     param_offset = 0
     for param in params:
         entry = func_table.add(param['name'], param['kind'], param['type'])
@@ -217,26 +246,113 @@ def p_func_decl(p):
             entry.offset = param_offset
             param_offset += 4
 
+    # 处理函数内部的局部变量声明
+    for var_decl in p[7]:
+        pass  # 局部变量已在 p_var_decl 中正确添加
+
     # 恢复全局符号表
     p.parser.current_table = old_table
-
-    # 将函数添加到全局表
-    func_entry = global_table.add(name, 'FUNC')
-    if func_entry:
-        func_entry.symtab = func_table
-        func_entry.type = rtype
-        func_entry.params = params
 
     p[0] = func_entry
 
 
-# [其他解析器规则保持不变...]
+def p_var_decl(p):
+    '''var_decl : type_spec ID SEMI
+                | type_spec ID LBRACK NUM RBRACK SEMI'''
+    name = p[2]
+    type = p[1]
+    current_table = p.parser.current_table  # 使用当前符号表
+
+    if len(p) == 4:
+        entry = current_table.add(name, 'VAR', type)
+    else:
+        dims = [p[4]]
+        entry = current_table.add(name, 'ARRAY', type, dims=dims)
+
+    p[0] = entry
+
+
+def p_var_decls(p):
+    '''var_decls : var_decls var_decl
+                | '''
+    if len(p) == 3:
+        p[0] = p[1] + [p[2]] if p[1] else [p[2]]
+    else:
+        p[0] = []
+
+
+def p_stmt_list(p):
+    '''stmt_list : stmt_list stmt
+                | '''
+    if len(p) == 3:
+        p[0] = p[1] + [p[2]] if p[1] else [p[2]]
+    else:
+        p[0] = []
+
+
+def p_stmt(p):
+    '''stmt : expr_stmt
+           | return_stmt'''
+    p[0] = p[1]
+
+
+def p_expr_stmt(p):
+    '''expr_stmt : expr SEMI
+                | SEMI'''
+    if len(p) == 3:
+        p[0] = p[1]
+    else:
+        p[0] = None
+
+
+def p_return_stmt(p):
+    '''return_stmt : RETURN expr SEMI
+                  | RETURN SEMI'''
+    if len(p) == 4:
+        p[0] = ('return', p[2])
+    else:
+        p[0] = ('return', None)
+
+
+def p_expr(p):
+    '''expr : ID ASSIGN expr
+           | ID LBRACK expr RBRACK
+           | ID LPAREN args RPAREN
+           | ID
+           | NUM'''
+    if len(p) == 2:
+        p[0] = p[1]
+    elif len(p) == 4 and p[2] == '=':
+        p[0] = ('assign', p[1], p[3])
+    elif len(p) == 5 and p[2] == '[':
+        p[0] = ('array_ref', p[1], p[3])
+    elif len(p) == 5 and p[2] == '(':
+        p[0] = ('call', p[1], p[3])
+
+
+def p_args(p):
+    '''args : arg_list
+           | '''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = []
+
+
+def p_arg_list(p):
+    '''arg_list : arg_list COMMA expr
+                | expr'''
+    if len(p) == 2:
+        p[0] = [p[1]]
+    else:
+        p[0] = p[1] + [p[3]]
+
 
 def p_error(p):
     if p:
-        print(f"语法错误: 意外的令牌: {p.type} ({p.value}) 在第 {p.lineno} 行")
+        print(f"Syntax error: Unexpected token: {p.type} ({p.value}) at line {p.lineno}")
     else:
-        print("语法错误: 意外的输入结束")
+        print("Syntax error: Unexpected end of input")
 
 
 # ====================
@@ -246,6 +362,9 @@ def p_error(p):
 # 创建词法分析器和语法分析器
 lexer = lex.lex()
 parser = yacc.yacc()
+
+# 初始化全局符号表
+global_table = SymbolTable()
 parser.current_table = global_table
 
 if __name__ == '__main__':
