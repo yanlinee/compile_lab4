@@ -1,0 +1,738 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Grammar
+
+Rule 0     S' -> program
+Rule 1     program -> decl_list
+Rule 2     decl_list -> decl_list decl
+Rule 3     decl_list -> decl
+Rule 4     decl -> var_decl
+Rule 5     decl -> func_decl
+Rule 6     type_spec -> INT
+Rule 7     type_spec -> VOID
+Rule 8     params -> param_list
+Rule 9     params -> VOID
+Rule 10    params -> <empty>
+Rule 11    param_list -> param_list COMMA param
+Rule 12    param_list -> param
+Rule 13    param -> type_spec ID
+Rule 14    param -> type_spec ID LBRACK RBRACK
+Rule 15    func_decl -> type_spec ID LPAREN params RPAREN LBRACE var_decls stmt_list RBRACE
+Rule 16    var_decl -> type_spec ID SEMI
+Rule 17    var_decl -> type_spec ID LBRACK NUM RBRACK SEMI
+Rule 18    var_decls -> var_decls var_decl
+Rule 19    var_decls -> <empty>
+Rule 20    stmt_list -> stmt_list stmt
+Rule 21    stmt_list -> <empty>
+Rule 22    stmt -> expr_stmt
+Rule 23    stmt -> return_stmt
+Rule 24    expr_stmt -> expr SEMI
+Rule 25    expr_stmt -> SEMI
+Rule 26    return_stmt -> RETURN expr SEMI
+Rule 27    return_stmt -> RETURN SEMI
+Rule 28    expr -> ID ASSIGN expr
+Rule 29    expr -> ID LBRACK expr RBRACK
+Rule 30    expr -> ID LPAREN args RPAREN
+Rule 31    expr -> ID
+Rule 32    expr -> NUM
+Rule 33    args -> arg_list
+Rule 34    args -> <empty>
+Rule 35    arg_list -> arg_list COMMA expr
+Rule 36    arg_list -> expr
+
+Terminals, with rules where they appear
+
+ASSIGN               : 28
+COMMA                : 11 35
+ID                   : 13 14 15 16 17 28 29 30 31
+INT                  : 6
+LBRACE               : 15
+LBRACK               : 14 17 29
+LPAREN               : 15 30
+NUM                  : 17 32
+RBRACE               : 15
+RBRACK               : 14 17 29
+RETURN               : 26 27
+RPAREN               : 15 30
+SEMI                 : 16 17 24 25 26 27
+VOID                 : 7 9
+error                : 
+
+Nonterminals, with rules where they appear
+
+arg_list             : 33 35
+args                 : 30
+decl                 : 2 3
+decl_list            : 1 2
+expr                 : 24 26 28 29 35 36
+expr_stmt            : 22
+func_decl            : 5
+param                : 11 12
+param_list           : 8 11
+params               : 15
+program              : 0
+return_stmt          : 23
+stmt                 : 20
+stmt_list            : 15 20
+type_spec            : 13 14 15 16 17
+var_decl             : 4 18
+var_decls            : 15 18
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . program
+    (1) program -> . decl_list
+    (2) decl_list -> . decl_list decl
+    (3) decl_list -> . decl
+    (4) decl -> . var_decl
+    (5) decl -> . func_decl
+    (16) var_decl -> . type_spec ID SEMI
+    (17) var_decl -> . type_spec ID LBRACK NUM RBRACK SEMI
+    (15) func_decl -> . type_spec ID LPAREN params RPAREN LBRACE var_decls stmt_list RBRACE
+    (6) type_spec -> . INT
+    (7) type_spec -> . VOID
+
+    INT             shift and go to state 7
+    VOID            shift and go to state 8
+
+    program                        shift and go to state 1
+    decl_list                      shift and go to state 2
+    decl                           shift and go to state 3
+    var_decl                       shift and go to state 4
+    func_decl                      shift and go to state 5
+    type_spec                      shift and go to state 6
+
+state 1
+
+    (0) S' -> program .
+
+
+
+state 2
+
+    (1) program -> decl_list .
+    (2) decl_list -> decl_list . decl
+    (4) decl -> . var_decl
+    (5) decl -> . func_decl
+    (16) var_decl -> . type_spec ID SEMI
+    (17) var_decl -> . type_spec ID LBRACK NUM RBRACK SEMI
+    (15) func_decl -> . type_spec ID LPAREN params RPAREN LBRACE var_decls stmt_list RBRACE
+    (6) type_spec -> . INT
+    (7) type_spec -> . VOID
+
+    $end            reduce using rule 1 (program -> decl_list .)
+    INT             shift and go to state 7
+    VOID            shift and go to state 8
+
+    decl                           shift and go to state 9
+    var_decl                       shift and go to state 4
+    func_decl                      shift and go to state 5
+    type_spec                      shift and go to state 6
+
+state 3
+
+    (3) decl_list -> decl .
+
+    INT             reduce using rule 3 (decl_list -> decl .)
+    VOID            reduce using rule 3 (decl_list -> decl .)
+    $end            reduce using rule 3 (decl_list -> decl .)
+
+
+state 4
+
+    (4) decl -> var_decl .
+
+    INT             reduce using rule 4 (decl -> var_decl .)
+    VOID            reduce using rule 4 (decl -> var_decl .)
+    $end            reduce using rule 4 (decl -> var_decl .)
+
+
+state 5
+
+    (5) decl -> func_decl .
+
+    INT             reduce using rule 5 (decl -> func_decl .)
+    VOID            reduce using rule 5 (decl -> func_decl .)
+    $end            reduce using rule 5 (decl -> func_decl .)
+
+
+state 6
+
+    (16) var_decl -> type_spec . ID SEMI
+    (17) var_decl -> type_spec . ID LBRACK NUM RBRACK SEMI
+    (15) func_decl -> type_spec . ID LPAREN params RPAREN LBRACE var_decls stmt_list RBRACE
+
+    ID              shift and go to state 10
+
+
+state 7
+
+    (6) type_spec -> INT .
+
+    ID              reduce using rule 6 (type_spec -> INT .)
+
+
+state 8
+
+    (7) type_spec -> VOID .
+
+    ID              reduce using rule 7 (type_spec -> VOID .)
+
+
+state 9
+
+    (2) decl_list -> decl_list decl .
+
+    INT             reduce using rule 2 (decl_list -> decl_list decl .)
+    VOID            reduce using rule 2 (decl_list -> decl_list decl .)
+    $end            reduce using rule 2 (decl_list -> decl_list decl .)
+
+
+state 10
+
+    (16) var_decl -> type_spec ID . SEMI
+    (17) var_decl -> type_spec ID . LBRACK NUM RBRACK SEMI
+    (15) func_decl -> type_spec ID . LPAREN params RPAREN LBRACE var_decls stmt_list RBRACE
+
+    SEMI            shift and go to state 11
+    LBRACK          shift and go to state 12
+    LPAREN          shift and go to state 13
+
+
+state 11
+
+    (16) var_decl -> type_spec ID SEMI .
+
+    INT             reduce using rule 16 (var_decl -> type_spec ID SEMI .)
+    VOID            reduce using rule 16 (var_decl -> type_spec ID SEMI .)
+    $end            reduce using rule 16 (var_decl -> type_spec ID SEMI .)
+    RBRACE          reduce using rule 16 (var_decl -> type_spec ID SEMI .)
+    SEMI            reduce using rule 16 (var_decl -> type_spec ID SEMI .)
+    RETURN          reduce using rule 16 (var_decl -> type_spec ID SEMI .)
+    ID              reduce using rule 16 (var_decl -> type_spec ID SEMI .)
+    NUM             reduce using rule 16 (var_decl -> type_spec ID SEMI .)
+
+
+state 12
+
+    (17) var_decl -> type_spec ID LBRACK . NUM RBRACK SEMI
+
+    NUM             shift and go to state 14
+
+
+state 13
+
+    (15) func_decl -> type_spec ID LPAREN . params RPAREN LBRACE var_decls stmt_list RBRACE
+    (8) params -> . param_list
+    (9) params -> . VOID
+    (10) params -> .
+    (11) param_list -> . param_list COMMA param
+    (12) param_list -> . param
+    (13) param -> . type_spec ID
+    (14) param -> . type_spec ID LBRACK RBRACK
+    (6) type_spec -> . INT
+    (7) type_spec -> . VOID
+
+    VOID            shift and go to state 18
+    RPAREN          reduce using rule 10 (params -> .)
+    INT             shift and go to state 7
+
+    type_spec                      shift and go to state 15
+    params                         shift and go to state 16
+    param_list                     shift and go to state 17
+    param                          shift and go to state 19
+
+state 14
+
+    (17) var_decl -> type_spec ID LBRACK NUM . RBRACK SEMI
+
+    RBRACK          shift and go to state 20
+
+
+state 15
+
+    (13) param -> type_spec . ID
+    (14) param -> type_spec . ID LBRACK RBRACK
+
+    ID              shift and go to state 21
+
+
+state 16
+
+    (15) func_decl -> type_spec ID LPAREN params . RPAREN LBRACE var_decls stmt_list RBRACE
+
+    RPAREN          shift and go to state 22
+
+
+state 17
+
+    (8) params -> param_list .
+    (11) param_list -> param_list . COMMA param
+
+    RPAREN          reduce using rule 8 (params -> param_list .)
+    COMMA           shift and go to state 23
+
+
+state 18
+
+    (9) params -> VOID .
+    (7) type_spec -> VOID .
+
+    RPAREN          reduce using rule 9 (params -> VOID .)
+    ID              reduce using rule 7 (type_spec -> VOID .)
+
+
+state 19
+
+    (12) param_list -> param .
+
+    COMMA           reduce using rule 12 (param_list -> param .)
+    RPAREN          reduce using rule 12 (param_list -> param .)
+
+
+state 20
+
+    (17) var_decl -> type_spec ID LBRACK NUM RBRACK . SEMI
+
+    SEMI            shift and go to state 24
+
+
+state 21
+
+    (13) param -> type_spec ID .
+    (14) param -> type_spec ID . LBRACK RBRACK
+
+    COMMA           reduce using rule 13 (param -> type_spec ID .)
+    RPAREN          reduce using rule 13 (param -> type_spec ID .)
+    LBRACK          shift and go to state 25
+
+
+state 22
+
+    (15) func_decl -> type_spec ID LPAREN params RPAREN . LBRACE var_decls stmt_list RBRACE
+
+    LBRACE          shift and go to state 26
+
+
+state 23
+
+    (11) param_list -> param_list COMMA . param
+    (13) param -> . type_spec ID
+    (14) param -> . type_spec ID LBRACK RBRACK
+    (6) type_spec -> . INT
+    (7) type_spec -> . VOID
+
+    INT             shift and go to state 7
+    VOID            shift and go to state 8
+
+    param                          shift and go to state 27
+    type_spec                      shift and go to state 15
+
+state 24
+
+    (17) var_decl -> type_spec ID LBRACK NUM RBRACK SEMI .
+
+    INT             reduce using rule 17 (var_decl -> type_spec ID LBRACK NUM RBRACK SEMI .)
+    VOID            reduce using rule 17 (var_decl -> type_spec ID LBRACK NUM RBRACK SEMI .)
+    $end            reduce using rule 17 (var_decl -> type_spec ID LBRACK NUM RBRACK SEMI .)
+    RBRACE          reduce using rule 17 (var_decl -> type_spec ID LBRACK NUM RBRACK SEMI .)
+    SEMI            reduce using rule 17 (var_decl -> type_spec ID LBRACK NUM RBRACK SEMI .)
+    RETURN          reduce using rule 17 (var_decl -> type_spec ID LBRACK NUM RBRACK SEMI .)
+    ID              reduce using rule 17 (var_decl -> type_spec ID LBRACK NUM RBRACK SEMI .)
+    NUM             reduce using rule 17 (var_decl -> type_spec ID LBRACK NUM RBRACK SEMI .)
+
+
+state 25
+
+    (14) param -> type_spec ID LBRACK . RBRACK
+
+    RBRACK          shift and go to state 28
+
+
+state 26
+
+    (15) func_decl -> type_spec ID LPAREN params RPAREN LBRACE . var_decls stmt_list RBRACE
+    (18) var_decls -> . var_decls var_decl
+    (19) var_decls -> .
+
+    INT             reduce using rule 19 (var_decls -> .)
+    VOID            reduce using rule 19 (var_decls -> .)
+    RBRACE          reduce using rule 19 (var_decls -> .)
+    SEMI            reduce using rule 19 (var_decls -> .)
+    RETURN          reduce using rule 19 (var_decls -> .)
+    ID              reduce using rule 19 (var_decls -> .)
+    NUM             reduce using rule 19 (var_decls -> .)
+
+    var_decls                      shift and go to state 29
+
+state 27
+
+    (11) param_list -> param_list COMMA param .
+
+    COMMA           reduce using rule 11 (param_list -> param_list COMMA param .)
+    RPAREN          reduce using rule 11 (param_list -> param_list COMMA param .)
+
+
+state 28
+
+    (14) param -> type_spec ID LBRACK RBRACK .
+
+    COMMA           reduce using rule 14 (param -> type_spec ID LBRACK RBRACK .)
+    RPAREN          reduce using rule 14 (param -> type_spec ID LBRACK RBRACK .)
+
+
+state 29
+
+    (15) func_decl -> type_spec ID LPAREN params RPAREN LBRACE var_decls . stmt_list RBRACE
+    (18) var_decls -> var_decls . var_decl
+    (20) stmt_list -> . stmt_list stmt
+    (21) stmt_list -> .
+    (16) var_decl -> . type_spec ID SEMI
+    (17) var_decl -> . type_spec ID LBRACK NUM RBRACK SEMI
+    (6) type_spec -> . INT
+    (7) type_spec -> . VOID
+
+    RBRACE          reduce using rule 21 (stmt_list -> .)
+    SEMI            reduce using rule 21 (stmt_list -> .)
+    RETURN          reduce using rule 21 (stmt_list -> .)
+    ID              reduce using rule 21 (stmt_list -> .)
+    NUM             reduce using rule 21 (stmt_list -> .)
+    INT             shift and go to state 7
+    VOID            shift and go to state 8
+
+    type_spec                      shift and go to state 30
+    stmt_list                      shift and go to state 31
+    var_decl                       shift and go to state 32
+
+state 30
+
+    (16) var_decl -> type_spec . ID SEMI
+    (17) var_decl -> type_spec . ID LBRACK NUM RBRACK SEMI
+
+    ID              shift and go to state 33
+
+
+state 31
+
+    (15) func_decl -> type_spec ID LPAREN params RPAREN LBRACE var_decls stmt_list . RBRACE
+    (20) stmt_list -> stmt_list . stmt
+    (22) stmt -> . expr_stmt
+    (23) stmt -> . return_stmt
+    (24) expr_stmt -> . expr SEMI
+    (25) expr_stmt -> . SEMI
+    (26) return_stmt -> . RETURN expr SEMI
+    (27) return_stmt -> . RETURN SEMI
+    (28) expr -> . ID ASSIGN expr
+    (29) expr -> . ID LBRACK expr RBRACK
+    (30) expr -> . ID LPAREN args RPAREN
+    (31) expr -> . ID
+    (32) expr -> . NUM
+
+    RBRACE          shift and go to state 35
+    SEMI            shift and go to state 40
+    RETURN          shift and go to state 41
+    ID              shift and go to state 34
+    NUM             shift and go to state 42
+
+    stmt                           shift and go to state 36
+    expr_stmt                      shift and go to state 37
+    return_stmt                    shift and go to state 38
+    expr                           shift and go to state 39
+
+state 32
+
+    (18) var_decls -> var_decls var_decl .
+
+    INT             reduce using rule 18 (var_decls -> var_decls var_decl .)
+    VOID            reduce using rule 18 (var_decls -> var_decls var_decl .)
+    RBRACE          reduce using rule 18 (var_decls -> var_decls var_decl .)
+    SEMI            reduce using rule 18 (var_decls -> var_decls var_decl .)
+    RETURN          reduce using rule 18 (var_decls -> var_decls var_decl .)
+    ID              reduce using rule 18 (var_decls -> var_decls var_decl .)
+    NUM             reduce using rule 18 (var_decls -> var_decls var_decl .)
+
+
+state 33
+
+    (16) var_decl -> type_spec ID . SEMI
+    (17) var_decl -> type_spec ID . LBRACK NUM RBRACK SEMI
+
+    SEMI            shift and go to state 11
+    LBRACK          shift and go to state 12
+
+
+state 34
+
+    (28) expr -> ID . ASSIGN expr
+    (29) expr -> ID . LBRACK expr RBRACK
+    (30) expr -> ID . LPAREN args RPAREN
+    (31) expr -> ID .
+
+    ASSIGN          shift and go to state 43
+    LBRACK          shift and go to state 44
+    LPAREN          shift and go to state 45
+    SEMI            reduce using rule 31 (expr -> ID .)
+    RBRACK          reduce using rule 31 (expr -> ID .)
+    COMMA           reduce using rule 31 (expr -> ID .)
+    RPAREN          reduce using rule 31 (expr -> ID .)
+
+
+state 35
+
+    (15) func_decl -> type_spec ID LPAREN params RPAREN LBRACE var_decls stmt_list RBRACE .
+
+    INT             reduce using rule 15 (func_decl -> type_spec ID LPAREN params RPAREN LBRACE var_decls stmt_list RBRACE .)
+    VOID            reduce using rule 15 (func_decl -> type_spec ID LPAREN params RPAREN LBRACE var_decls stmt_list RBRACE .)
+    $end            reduce using rule 15 (func_decl -> type_spec ID LPAREN params RPAREN LBRACE var_decls stmt_list RBRACE .)
+
+
+state 36
+
+    (20) stmt_list -> stmt_list stmt .
+
+    RBRACE          reduce using rule 20 (stmt_list -> stmt_list stmt .)
+    SEMI            reduce using rule 20 (stmt_list -> stmt_list stmt .)
+    RETURN          reduce using rule 20 (stmt_list -> stmt_list stmt .)
+    ID              reduce using rule 20 (stmt_list -> stmt_list stmt .)
+    NUM             reduce using rule 20 (stmt_list -> stmt_list stmt .)
+
+
+state 37
+
+    (22) stmt -> expr_stmt .
+
+    RBRACE          reduce using rule 22 (stmt -> expr_stmt .)
+    SEMI            reduce using rule 22 (stmt -> expr_stmt .)
+    RETURN          reduce using rule 22 (stmt -> expr_stmt .)
+    ID              reduce using rule 22 (stmt -> expr_stmt .)
+    NUM             reduce using rule 22 (stmt -> expr_stmt .)
+
+
+state 38
+
+    (23) stmt -> return_stmt .
+
+    RBRACE          reduce using rule 23 (stmt -> return_stmt .)
+    SEMI            reduce using rule 23 (stmt -> return_stmt .)
+    RETURN          reduce using rule 23 (stmt -> return_stmt .)
+    ID              reduce using rule 23 (stmt -> return_stmt .)
+    NUM             reduce using rule 23 (stmt -> return_stmt .)
+
+
+state 39
+
+    (24) expr_stmt -> expr . SEMI
+
+    SEMI            shift and go to state 46
+
+
+state 40
+
+    (25) expr_stmt -> SEMI .
+
+    RBRACE          reduce using rule 25 (expr_stmt -> SEMI .)
+    SEMI            reduce using rule 25 (expr_stmt -> SEMI .)
+    RETURN          reduce using rule 25 (expr_stmt -> SEMI .)
+    ID              reduce using rule 25 (expr_stmt -> SEMI .)
+    NUM             reduce using rule 25 (expr_stmt -> SEMI .)
+
+
+state 41
+
+    (26) return_stmt -> RETURN . expr SEMI
+    (27) return_stmt -> RETURN . SEMI
+    (28) expr -> . ID ASSIGN expr
+    (29) expr -> . ID LBRACK expr RBRACK
+    (30) expr -> . ID LPAREN args RPAREN
+    (31) expr -> . ID
+    (32) expr -> . NUM
+
+    SEMI            shift and go to state 48
+    ID              shift and go to state 34
+    NUM             shift and go to state 42
+
+    expr                           shift and go to state 47
+
+state 42
+
+    (32) expr -> NUM .
+
+    SEMI            reduce using rule 32 (expr -> NUM .)
+    RBRACK          reduce using rule 32 (expr -> NUM .)
+    COMMA           reduce using rule 32 (expr -> NUM .)
+    RPAREN          reduce using rule 32 (expr -> NUM .)
+
+
+state 43
+
+    (28) expr -> ID ASSIGN . expr
+    (28) expr -> . ID ASSIGN expr
+    (29) expr -> . ID LBRACK expr RBRACK
+    (30) expr -> . ID LPAREN args RPAREN
+    (31) expr -> . ID
+    (32) expr -> . NUM
+
+    ID              shift and go to state 34
+    NUM             shift and go to state 42
+
+    expr                           shift and go to state 49
+
+state 44
+
+    (29) expr -> ID LBRACK . expr RBRACK
+    (28) expr -> . ID ASSIGN expr
+    (29) expr -> . ID LBRACK expr RBRACK
+    (30) expr -> . ID LPAREN args RPAREN
+    (31) expr -> . ID
+    (32) expr -> . NUM
+
+    ID              shift and go to state 34
+    NUM             shift and go to state 42
+
+    expr                           shift and go to state 50
+
+state 45
+
+    (30) expr -> ID LPAREN . args RPAREN
+    (33) args -> . arg_list
+    (34) args -> .
+    (35) arg_list -> . arg_list COMMA expr
+    (36) arg_list -> . expr
+    (28) expr -> . ID ASSIGN expr
+    (29) expr -> . ID LBRACK expr RBRACK
+    (30) expr -> . ID LPAREN args RPAREN
+    (31) expr -> . ID
+    (32) expr -> . NUM
+
+    RPAREN          reduce using rule 34 (args -> .)
+    ID              shift and go to state 34
+    NUM             shift and go to state 42
+
+    args                           shift and go to state 51
+    arg_list                       shift and go to state 52
+    expr                           shift and go to state 53
+
+state 46
+
+    (24) expr_stmt -> expr SEMI .
+
+    RBRACE          reduce using rule 24 (expr_stmt -> expr SEMI .)
+    SEMI            reduce using rule 24 (expr_stmt -> expr SEMI .)
+    RETURN          reduce using rule 24 (expr_stmt -> expr SEMI .)
+    ID              reduce using rule 24 (expr_stmt -> expr SEMI .)
+    NUM             reduce using rule 24 (expr_stmt -> expr SEMI .)
+
+
+state 47
+
+    (26) return_stmt -> RETURN expr . SEMI
+
+    SEMI            shift and go to state 54
+
+
+state 48
+
+    (27) return_stmt -> RETURN SEMI .
+
+    RBRACE          reduce using rule 27 (return_stmt -> RETURN SEMI .)
+    SEMI            reduce using rule 27 (return_stmt -> RETURN SEMI .)
+    RETURN          reduce using rule 27 (return_stmt -> RETURN SEMI .)
+    ID              reduce using rule 27 (return_stmt -> RETURN SEMI .)
+    NUM             reduce using rule 27 (return_stmt -> RETURN SEMI .)
+
+
+state 49
+
+    (28) expr -> ID ASSIGN expr .
+
+    SEMI            reduce using rule 28 (expr -> ID ASSIGN expr .)
+    RBRACK          reduce using rule 28 (expr -> ID ASSIGN expr .)
+    COMMA           reduce using rule 28 (expr -> ID ASSIGN expr .)
+    RPAREN          reduce using rule 28 (expr -> ID ASSIGN expr .)
+
+
+state 50
+
+    (29) expr -> ID LBRACK expr . RBRACK
+
+    RBRACK          shift and go to state 55
+
+
+state 51
+
+    (30) expr -> ID LPAREN args . RPAREN
+
+    RPAREN          shift and go to state 56
+
+
+state 52
+
+    (33) args -> arg_list .
+    (35) arg_list -> arg_list . COMMA expr
+
+    RPAREN          reduce using rule 33 (args -> arg_list .)
+    COMMA           shift and go to state 57
+
+
+state 53
+
+    (36) arg_list -> expr .
+
+    COMMA           reduce using rule 36 (arg_list -> expr .)
+    RPAREN          reduce using rule 36 (arg_list -> expr .)
+
+
+state 54
+
+    (26) return_stmt -> RETURN expr SEMI .
+
+    RBRACE          reduce using rule 26 (return_stmt -> RETURN expr SEMI .)
+    SEMI            reduce using rule 26 (return_stmt -> RETURN expr SEMI .)
+    RETURN          reduce using rule 26 (return_stmt -> RETURN expr SEMI .)
+    ID              reduce using rule 26 (return_stmt -> RETURN expr SEMI .)
+    NUM             reduce using rule 26 (return_stmt -> RETURN expr SEMI .)
+
+
+state 55
+
+    (29) expr -> ID LBRACK expr RBRACK .
+
+    SEMI            reduce using rule 29 (expr -> ID LBRACK expr RBRACK .)
+    RBRACK          reduce using rule 29 (expr -> ID LBRACK expr RBRACK .)
+    COMMA           reduce using rule 29 (expr -> ID LBRACK expr RBRACK .)
+    RPAREN          reduce using rule 29 (expr -> ID LBRACK expr RBRACK .)
+
+
+state 56
+
+    (30) expr -> ID LPAREN args RPAREN .
+
+    SEMI            reduce using rule 30 (expr -> ID LPAREN args RPAREN .)
+    RBRACK          reduce using rule 30 (expr -> ID LPAREN args RPAREN .)
+    COMMA           reduce using rule 30 (expr -> ID LPAREN args RPAREN .)
+    RPAREN          reduce using rule 30 (expr -> ID LPAREN args RPAREN .)
+
+
+state 57
+
+    (35) arg_list -> arg_list COMMA . expr
+    (28) expr -> . ID ASSIGN expr
+    (29) expr -> . ID LBRACK expr RBRACK
+    (30) expr -> . ID LPAREN args RPAREN
+    (31) expr -> . ID
+    (32) expr -> . NUM
+
+    ID              shift and go to state 34
+    NUM             shift and go to state 42
+
+    expr                           shift and go to state 58
+
+state 58
+
+    (35) arg_list -> arg_list COMMA expr .
+
+    COMMA           reduce using rule 35 (arg_list -> arg_list COMMA expr .)
+    RPAREN          reduce using rule 35 (arg_list -> arg_list COMMA expr .)
+

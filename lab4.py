@@ -66,20 +66,22 @@ def t_error(t):
 # ====================
 
 class SymbolTableHeader:
-    """符号表头部信息"""
-
     def __init__(self, outer=None, name="global"):
         self.outer = outer  # 外层符号表
         self.width = 0  # 作用域大小
         self.rtype = None  # 返回类型（函数用）
         self.argc = 0  # 参数个数（函数用）
+        self.params = []  # 参数列表
         self.level = 0  # 作用域层级
         self.name = name  # 作用域名称
 
     def __repr__(self):
+        param_str = ", ".join([f"{p['name']}: {p['type']}" for p in self.params]) if self.params else ""
         return (f"Scope [{self.name}]:\n"
                 f"Size={self.width}, Return Type={self.rtype}, "
-                f"Param Count={self.argc}, Level={self.level}")
+                f"Param Count={self.argc}"
+                + (f", Params=[{param_str}]" if self.params else "")
+                + f", Level={self.level}")
 
 
 class SymbolTableEntry:
@@ -157,6 +159,7 @@ class SymbolTable:
 def p_program(p):
     '''program : decl_list'''
     p[0] = p[1]
+    check_and_clean_symbol_tables(global_table)
     print("\nGlobal Symbol Table:")
     print(global_table)
     for entry in global_table.entries.values():
@@ -226,6 +229,7 @@ def p_func_decl(p):
     func_table = SymbolTable(outer=global_table, name=name)
     func_table.header.rtype = rtype
     func_table.header.argc = len(params)
+    func_table.header.params = params  # 保存参数列表
 
     # 将函数添加到全局符号表
     func_entry = global_table.add(name, 'FUNC')
@@ -248,7 +252,10 @@ def p_func_decl(p):
 
     # 处理函数内部的局部变量声明
     for var_decl in p[7]:
-        pass  # 局部变量已在 p_var_decl 中正确添加
+        if isinstance(var_decl, SymbolTableEntry):
+            # 确保局部变量被添加到函数的符号表中
+            if var_decl.name not in func_table.entries:
+                func_table.add(var_decl.name, var_decl.kind, var_decl.type)
 
     # 恢复全局符号表
     p.parser.current_table = old_table
@@ -355,6 +362,26 @@ def p_error(p):
         print("Syntax error: Unexpected end of input")
 
 
+def check_and_clean_symbol_tables(global_table):
+    """检查并清理全局符号表中出现在函数中的变量"""
+    to_delete = set()
+
+    # 收集所有出现在函数符号表中的变量名
+    for global_entry in global_table.entries.values():
+        if global_entry.kind == 'FUNC' and global_entry.symtab:
+            func_table = global_entry.symtab
+            # 检查函数符号表中的每个变量
+            for name in func_table.entries:
+                # 如果这个变量也在全局表中，且是变量或数组类型
+                if name in global_table.entries:
+                    global_var = global_table.entries[name]
+                    if global_var.kind in ['VAR', 'ARRAY']:
+                        to_delete.add(name)
+
+    # 从全局符号表中删除这些变量
+    for name in to_delete:
+        del global_table.entries[name]
+        print(f"Warning: Removed '{name}' from global symbol table as it appears in local scope")
 # ====================
 # 主程序部分
 # ====================
