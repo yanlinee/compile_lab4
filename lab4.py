@@ -1,24 +1,12 @@
-#!/usr/bin/env python
-# -*- coding: UTF-8 -*-
-"""
-@Project ：compile_lab4 
-@File    ：lab4.py
-@IDE     ：PyCharm 
-@Author  ：ZCTong
-@Date    ：2025/5/14 11:13 
-"""
-
 import ply.lex as lex
 import ply.yacc as yacc
 
-# ========================
-# Token 定义
-# ========================
+# Lexical analysis
 tokens = (
     'ID', 'NUM',
     'INT', 'VOID',
     'LPAREN', 'RPAREN', 'LBRACK', 'RBRACK', 'LBRACE', 'RBRACE',
-    'SEMI', 'COMMA',
+    'SEMI', 'COMMA'
 )
 
 t_LPAREN = r'\('
@@ -36,6 +24,11 @@ reserved = {
 }
 
 
+def t_newline(t):
+    r'\n+'
+    t.lexer.lineno += len(t.value)
+
+
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
     t.type = reserved.get(t.value, 'ID')
@@ -48,121 +41,181 @@ def t_NUM(t):
     return t
 
 
-t_ignore = ' \t\n\r'
+t_ignore = ' \t\r'
 
 
 def t_error(t):
-    print(f"Illegal character {t.value[0]}")
+    print(f"Illegal character: {t.value[0]}")
     t.lexer.skip(1)
 
 
-lexer = lex.lex()
-
-
-# ========================
-# 符号表结构
-# ========================
-class SymbolTable:
-    def __init__(self, outer=None, rtype=None):
+# Symbol table classes
+class SymbolTableHeader:
+    def __init__(self, outer=None, name="global"):
         self.outer = outer
-        self.symbols = {}
         self.width = 0
+        self.rtype = None
         self.argc = 0
-        self.arglist = []
-        self.rtype = rtype
-
-    def add(self, name, entry):
-        if name in self.symbols:
-            print(f"Warning: Duplicate declaration of {name}")
-        entry['offset'] = self.width
-        self.symbols[name] = entry
-        if entry['type'] not in ('FUNC', 'FUNPTT'):
-            self.width += 4  # 假设每个变量占4字节
+        self.level = 0
+        self.name = name
 
     def __repr__(self):
-        return f"<SymbolTable width={self.width}, argc={self.argc}, arglist={self.arglist}, rtype={self.rtype}, symbols={self.symbols}>"
+        return (f"Scope [{self.name}]:\n"
+                f"Size={self.width}, Return Type={self.rtype}, "
+                f"Param Count={self.argc}, Level={self.level}")
 
 
-# ========================
-# 分析器规则
-# ========================
+class SymbolTableEntry:
+    def __init__(self, name, kind):
+        self.name = name
+        self.kind = kind
+        self.type = None
+        self.offset = 0
+        self.size = 4
+        self.dims = []
+        self.params = []
+        self.symtab = None
+
+    def __repr__(self):
+        # kind 为 FUNC 时，type 显示为 FUNC
+        type_str = self.kind if self.kind == 'FUNC' else self.type
+        info = [f"{self.name}", f"{type_str}", f"{self.offset}"]
+        if self.kind == 'ARRAY':
+            info.append(f"dims={self.dims}")
+        return " ".join(info)
+
+
+class SymbolTable:
+    def __init__(self, outer=None, name="global"):
+        self.header = SymbolTableHeader(outer, name)
+        if outer:
+            self.header.level = outer.header.level + 1
+        self.entries = {}
+
+    def add(self, name, kind, type=None, dims=None):
+        if name in self.entries:
+            print(f"Warning: Redefinition of {name}")
+            return None
+
+        entry = SymbolTableEntry(name, kind)
+        entry.type = type
+        entry.offset = self.header.width
+
+        if kind == 'ARRAY':
+            if dims:
+                entry.dims = dims
+                entry.size = 4 * dims[0]
+            else:
+                entry.size = 4
+
+        self.entries[name] = entry
+        if kind != 'FUNC':
+            self.header.width += entry.size
+
+        return entry
+
+    def lookup(self, name):
+        if name in self.entries:
+            return self.entries[name]
+        if self.header.outer:
+            return self.header.outer.lookup(name)
+        return None
+
+    def __repr__(self):
+        result = [str(self.header)]
+        if self.entries:
+            result.append("Symbols:")
+            for entry in self.entries.values():
+                result.append(f"  {entry}")
+        # 函数符号表补充参数和 code 信息
+        if self.header.name != "global":
+            # 参数个数
+            result.append(f"Param Count: {self.header.argc}")
+            # 只输出参数名，无参数为NIL
+            param_names = [entry.name for entry in self.entries.values() if entry.offset < self.header.argc * 4]
+            result.append("Param List: " + (", ".join(param_names) if param_names else "NIL"))
+            result.append("Code: ...")
+        return "\n".join(result)
+
+
+# Parser
 start = 'program'
-
 global_table = SymbolTable()
 
 
 def p_program(p):
     '''program : decl_list'''
-    print("全局符号表：")
+    print("\nGlobal Symbol Table:")
     print(global_table)
+    for entry in global_table.entries.values():
+        if entry.kind == 'FUNC' and entry.symtab:
+            print(f"\nFunction {entry.name} Symbol Table:")
+            print(entry.symtab)
+    p[0] = p[1]
+
+
+def p_compound_stmt(p):
+    '''compound_stmt : LBRACE var_decls stmt_list RBRACE'''
+    p[0] = (p[2], p[3])
+
+
+def p_stmt_list(p):
+    '''stmt_list : stmt_list stmt
+                 | '''
+    if len(p) == 1:
+        p[0] = []
+    else:
+        p[0] = p[1] + [p[2]]
+
+
+def p_stmt(p):
+    '''stmt : SEMI'''
+    p[0] = None
 
 
 def p_decl_list(p):
     '''decl_list : decl_list decl
                  | decl'''
-    pass
+    if len(p) == 2:
+        p[0] = [p[1]]
+    else:
+        p[0] = p[1] + [p[2]]
 
 
 def p_decl(p):
     '''decl : var_decl
             | func_decl'''
-    pass
+    p[0] = p[1]
 
 
 def p_var_decl(p):
     '''var_decl : type_spec ID SEMI
                 | type_spec ID LBRACK NUM RBRACK SEMI'''
-    typename = p[1]
     name = p[2]
+    type = p[1]
+    current_table = p.parser.current_table  # 只用当前表
+
     if len(p) == 4:
-        global_table.add(name, {'name': name, 'type': 'VAR'})
+        entry = current_table.add(name, 'VAR', type)
     else:
         dims = [p[4]]
-        global_table.add(name, {'name': name, 'type': 'ARRAY', 'etype': typename, 'dims': dims})
+        entry = current_table.add(name, 'ARRAY', type, dims=dims)
+    p[0] = entry
 
 
 def p_type_spec(p):
     '''type_spec : INT
-                 | VOID'''
+                | VOID'''
     p[0] = p[1]
-
-
-def p_func_decl(p):
-    '''func_decl : type_spec ID LPAREN params RPAREN compound_stmt'''
-    name = p[2]
-    return_type = p[1]
-    params = p[4]
-    local_decls = p[6]
-
-    func_symtab = SymbolTable(outer=global_table)
-
-    # 加入参数
-    for param in params:
-        func_symtab.add(param['name'], param)
-
-    # 加入局部变量
-    for decl in local_decls:
-        func_symtab.add(decl['name'], decl)
-
-    func_symtab.argc = len(params)
-    func_symtab.arglist = [param['name'] for param in params]
-    func_symtab.rtype = return_type
-
-    global_table.add(name, {
-        'name': name,
-        'type': 'FUNC',
-        'rtype': return_type,
-        'symtab': func_symtab
-    })
-
-    print(f"函数 {name} 的符号表：")
-    print(func_symtab)
 
 
 def p_params(p):
     '''params : param_list
-              | VOID'''
-    if p[1] == 'void':
+              | VOID
+              | '''
+    if len(p) == 1:  # ()
+        p[0] = []
+    elif p[1] == 'void':
         p[0] = []
     else:
         p[0] = p[1]
@@ -179,59 +232,85 @@ def p_param_list(p):
 
 def p_param(p):
     '''param : type_spec ID
-             | type_spec ID LBRACK RBRACK'''
-    typename = p[1]
+            | type_spec ID LBRACK RBRACK'''
     name = p[2]
+    type = p[1]
     if len(p) == 3:
-        p[0] = {'name': name, 'type': 'VAR', 'etype': typename}
+        p[0] = {'name': name, 'kind': 'VAR', 'type': type}
     else:
-        p[0] = {'name': name, 'type': 'ARRPTT', 'etype': typename}
+        p[0] = {'name': name, 'kind': 'ARRPTR', 'type': type, 'dims': [0]}
 
 
-def p_compound_stmt(p):
-    '''compound_stmt : LBRACE local_decls RBRACE'''
-    p[0] = p[2]  # 返回 local_decls 给 func_decl
-
-
-def p_local_decls(p):
-    '''local_decls : local_decls var_decl_in_func
-                   | empty'''
-    if len(p) == 2:
-        p[0] = p[1]  # empty -> []
+def p_var_decls(p):
+    '''var_decls : var_decls var_decl
+                | var_decl
+                | '''
+    if len(p) == 1:  # empty production
+        p[0] = []
+    elif len(p) == 2:
+        p[0] = [p[1]]
     else:
         p[0] = p[1] + [p[2]]
 
 
-def p_var_decl_in_func(p):
-    '''var_decl_in_func : type_spec ID SEMI
-                        | type_spec ID LBRACK NUM RBRACK SEMI'''
-    typename = p[1]
+def p_func_decl(p):
+    '''func_decl : type_spec ID LPAREN params RPAREN compound_stmt'''
     name = p[2]
-    if len(p) == 4:
-        p[0] = {'name': name, 'type': 'VAR', 'etype': typename}
-    else:
-        dims = [p[4]]
-        p[0] = {'name': name, 'type': 'ARRAY', 'etype': typename, 'dims': dims}
+    rtype = p[1]
+    params = p[4]
 
+    func_table = SymbolTable(outer=global_table, name=name)
+    func_table.header.rtype = rtype
+    func_table.header.argc = len(params)
 
-def p_empty(p):
-    'empty :'
-    p[0] = []
+    # 切换当前符号表为函数表
+    old_table = p.parser.current_table
+    p.parser.current_table = func_table
+
+    # 先处理参数
+    param_offset = 0
+    for param in params:
+        entry = func_table.add(param['name'], param['kind'], param['type'])
+        if entry:
+            entry.offset = param_offset
+            param_offset += 4
+
+    # 重置偏移量，处理局部变量
+    func_table.header.width = 0  # 重要：重置宽度
+    var_decls = p[6][0] if p[6][0] is not None else []
+    for decl in var_decls:
+        if decl:
+            entry = func_table.add(decl.name, decl.kind, decl.type, getattr(decl, 'dims', None))
+            if entry:
+                entry.offset = func_table.header.width
+                func_table.header.width += entry.size
+
+    # 恢复当前符号表为全局表
+    p.parser.current_table = old_table
+
+    func_entry = global_table.add(name, 'FUNC')
+    if func_entry:
+        func_entry.symtab = func_table
+        func_entry.params = params
+        func_entry.type = rtype
+
+    p[0] = func_entry
 
 
 def p_error(p):
     if p:
-        print(f"Syntax error at {p.value}")
+        print(f"Error: Parser encountered unexpected token: {p.type} ({p.value}) at line {p.lineno}")
     else:
-        print("Syntax error at EOF")
+        print("Error: Parser reached unexpected end of input")
 
 
+# Create parser
+lexer = lex.lex()
 parser = yacc.yacc()
+parser.current_table = global_table
 
-# ========================
-# 主程序入口
-# ========================
+# Main program
 if __name__ == '__main__':
     with open('test.c', 'r') as f:
-        code = f.read()
-    parser.parse(code)
+        data = f.read()
+    parser.parse(data, lexer=lexer)

@@ -6,6 +6,10 @@ void foo(int x, int y[]) {
     int arr[3];
 }
 
+int bar(int m) {
+
+}
+
 int main() {
     int m;
 }
